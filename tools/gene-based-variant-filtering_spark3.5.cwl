@@ -33,30 +33,51 @@ inputs:
   doc: GB of RAM to allocate to this task
   type: int?
   default: 48
+  inputBinding:
+    position: 3
+    prefix: --spark_driver_mem
 - id: spark_executor_instance
   doc: number of instances used 
   type: int?
   default: 3
+  inputBinding:
+    position: 3
+    prefix: --spark_executor_instance
 - id: spark_executor_mem
   doc: GB of executor memory
   type: int?
   default: 34
+  inputBinding:
+    position: 3
+    prefix: --spark_executor_mem
 - id: spark_executor_core
   doc: number of executor cores
   type: int?
   default: 5
+  inputBinding:
+    position: 3
+    prefix: --spark_executor_core
 - id: spark_driver_core
   doc: number of driver cores
   type: int?
   default: 2
+  inputBinding:
+    position: 3
+    prefix: --spark_driver_core
 - id: spark_driver_maxResultSize
   doc: GB of driver maxResultSize
   type: int?
   default: 2
+  inputBinding:
+    position: 3
+    prefix: --spark_driver_maxResultSize
 - id: sql_broadcastTimeout
   doc: .config("spark.sql.broadcastTimeout", 36000)
   type: int?
   default: 36000
+  inputBinding:
+    position: 3
+    prefix: --sql_broadcastTimeout
 - id: hgmd_var
   doc: the latest HGMD variant  parquet file dir
   type: File
@@ -73,26 +94,31 @@ inputs:
     path: 65b03e76b2d0f428e1c6f049
 - id: clinvar
   type: boolean
+  default: true
   inputBinding:
     position: 3
     prefix: --clinvar
 - id: consequences
   type: boolean
+  default: true
   inputBinding:
     position: 3
     prefix: --consequences
 - id: variants
   type: boolean
+  default: true
   inputBinding:
     position: 3
     prefix: --variants
 - id: diagnoses
   type: boolean
+  default: true
   inputBinding:
     position: 3
     prefix: --diagnoses
 - id: phenotypes
   type: boolean
+  default: true
   inputBinding:
     position: 3
     prefix: --phenotypes
