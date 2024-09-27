@@ -260,7 +260,7 @@ def write_output(t_output, output_basename, study_id_list):
     Date = list(spark.sql("select current_date()") \
                 .withColumn("current_date()", F.col("current_date()").cast("string")) \
                 .toPandas()['current_date()'])
-    output_filename= "_".join(Date) + "_" + output_basename + "_".join(study_id_list) + ".tsv.gz"
+    output_filename= "_".join(Date) + "_" + output_basename + "_"  + "_".join(study_id_list) + ".tsv.gz"
     t_output.toPandas() \
         .to_csv(output_filename, sep="\t", index=False, na_rep='-', compression='gzip')
 
