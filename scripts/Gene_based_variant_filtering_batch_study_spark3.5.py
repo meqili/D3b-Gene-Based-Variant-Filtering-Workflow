@@ -25,6 +25,7 @@ parser.add_argument('--consequences', action='store_true', help='Include consequ
 parser.add_argument('--variants', action='store_true', help='Include variants data')
 parser.add_argument('--diagnoses', action='store_true', help='Include diagnoses data')
 parser.add_argument('--phenotypes', action='store_true', help='Include phenotypes data')
+parser.add_argument('--studies', action='store_true', help='Include studies data')
 parser.add_argument('--occurrences',
         help='occurrences parquet file dir')
 parser.add_argument('--maf', default=0.0001,
@@ -111,6 +112,9 @@ if args.diagnoses:
 if args.phenotypes:
     phenotypes = spark.read.format("delta") \
         .load('s3a://kf-strides-registered-vwb-prd/normalized/phenotype')
+if args.studies:
+    studies = spark.read.format("delta") \
+        .load("s3a://kf-strides-registered-vwb-prd/es_index/fhir/study_centric/")
 occurrences = spark.read.parquet(occurrences_path)
 
 # provided study id by occurences table
@@ -131,7 +135,7 @@ study_id_list = [substring.upper()]
 # gene based variant filtering
 def gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l, dpc_u,
                 known_variants_l, aaf, hg38_HGMD_variant, dbnsfp_annovar, clinvar, 
-                consequences, variants, diagnoses, phenotypes, occurrences):
+                consequences, variants, diagnoses, phenotypes, studies, occurrences):
     #  Actual running step, generating table t_output
     cond = ['chromosome', 'start', 'reference', 'alternate']
 
@@ -264,10 +268,13 @@ def gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l,
         .groupBy('participant_id') \
         .agg(F.collect_list('source_text').alias('phenotypes_combined'), \
             F.collect_list('code').alias('hpos_combined'))
+    #### processing studies table
+    t_std = studies.select("study_id", "study_code").distinct()
     
     t_output_dgn_pht = t_output \
         .join(t_dgn, 'participant_id', 'left') \
-        .join(t_pht, 'participant_id', 'left')
+        .join(t_pht, 'participant_id', 'left') \
+        .join(t_std, 'study_id', 'left')
 
     return (t_output_dgn_pht)
 

@@ -117,6 +117,11 @@ inputs:
   inputBinding:
     position: 3
     prefix: --phenotypes
+- id: studies
+  type: boolean
+  inputBinding:
+    position: 3
+    prefix: --studies
 - id: gnomAD_TOPMed_maf
   doc: the max global AF across all gnomAD and TOPMed databases
   type: double?
