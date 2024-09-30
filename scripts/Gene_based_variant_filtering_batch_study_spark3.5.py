@@ -114,7 +114,7 @@ if args.phenotypes:
         .load('s3a://kf-strides-registered-vwb-prd/normalized/phenotype')
 if args.studies:
     studies = spark.read.format("delta") \
-        .load("s3a://kf-strides-registered-vwb-prd/es_index/fhir/study_centric/")
+        .load("s3a://kf-strides-registered-vwb-prd/normalized/research_study")
 occurrences = spark.read.parquet(occurrences_path)
 
 # provided study id by occurences table
@@ -308,6 +308,9 @@ if args.diagnoses is None:
     exit(1)
 if args.phenotypes is None:
     print("Missing phenotypes parquet file", file=sys.stderr)
+    exit(1)
+if args.studies is None:
+    print("Missing studies parquet file", file=sys.stderr)
     exit(1)
 
 t_output = gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l, dpc_u,
