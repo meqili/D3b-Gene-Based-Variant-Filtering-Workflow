@@ -258,6 +258,7 @@ def gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l,
     phenotypes = phenotypes.join(hpo_pht, on="phenotype_id", how="left")
     t_pht = phenotypes \
         .withColumn('participant_id', F.regexp_replace(F.upper(F.col('participant_fhir_id')), "-", "_")) \
+        .filter(F.col("observed") == "confirmed") \
         .select('participant_id', 'source_text', 'code') \
         .distinct() \
         .groupBy('participant_id') \

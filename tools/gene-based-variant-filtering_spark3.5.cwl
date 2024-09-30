@@ -94,31 +94,26 @@ inputs:
     path: 65b03e76b2d0f428e1c6f049
 - id: clinvar
   type: boolean
-  default: true
   inputBinding:
     position: 3
     prefix: --clinvar
 - id: consequences
   type: boolean
-  default: true
   inputBinding:
     position: 3
     prefix: --consequences
 - id: variants
   type: boolean
-  default: true
   inputBinding:
     position: 3
     prefix: --variants
 - id: diagnoses
   type: boolean
-  default: true
   inputBinding:
     position: 3
     prefix: --diagnoses
 - id: phenotypes
   type: boolean
-  default: true
   inputBinding:
     position: 3
     prefix: --phenotypes
