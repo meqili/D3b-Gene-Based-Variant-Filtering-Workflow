@@ -230,7 +230,7 @@ def gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l,
     # Table occurrences, restricted to input genes, chromosomes of those genes, input study IDs, and occurrences where alternate allele
     # is present, plus adjusted calls based on alternative allele fraction in the total sequencing depth
     c_ocr = ['ad', 'dp', 'variant_allele_fraction', 'calls', 'adjusted_calls', 'filter', 'is_lo_conf_denovo', 'is_hi_conf_denovo',
-        'is_proband', 'affected_status', 'gender',
+        'is_proband', 'affected_status', 'gender', 'study_id',
         'biospecimen_id', 'participant_id', 'mother_id', 'father_id', 'family_id']
     t_ocr = occurrences.withColumn('variant_allele_fraction', F.col('ad')[1] / (F.col('ad')[0] + F.col('ad')[1])) \
         .withColumn('adjusted_calls', F.when(F.col('variant_allele_fraction') < aaf, F.array(F.lit(0), F.lit(0)))
@@ -250,11 +250,10 @@ def gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l,
 
     t_dgn = diagnoses \
         .withColumn('participant_id', F.regexp_replace(F.upper(F.col('participant_fhir_id')), "-", "_")) \
-        .select('study_id','participant_id', 'source_text') \
+        .select('participant_id', 'source_text') \
         .distinct() \
         .groupBy('participant_id') \
-        .agg(F.collect_list('source_text').alias('diagnoses_combined'), \
-            F.first('study_id').alias('study_id')) 
+        .agg(F.collect_list('source_text').alias('diagnoses_combined'))
     #### processing phenotypes table
     exploded_pht = phenotypes.select("phenotype_id", F.explode(F.col("condition_coding")).alias("coding"))
     hpo_pht = exploded_pht.filter(F.col("coding.category") == "HPO") \
@@ -315,5 +314,5 @@ if args.studies is None:
 
 t_output = gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l, dpc_u,
                     known_variants_l, aaf, hg38_HGMD_variant, dbnsfp_annovar, clinvar, 
-                    consequences, variants, diagnoses, phenotypes, occurrences)
+                    consequences, variants, diagnoses, phenotypes, studies, occurrences)
 write_output(t_output, output_basename, study_id_list)
