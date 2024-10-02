@@ -284,8 +284,19 @@ def write_output(t_output, output_basename, study_id_list):
                 .withColumn("current_date()", F.col("current_date()").cast("string")) \
                 .toPandas()['current_date()'])
     output_filename= "_".join(Date) + "_" + output_basename + "_"  + "_".join(study_id_list) + ".tsv.gz"
-    t_output.toPandas() \
-        .to_csv(output_filename, sep="\t", index=False, na_rep='-', compression='gzip')
+    # Sort the output
+    t_output_sorted = t_output.sort(
+        F.asc(
+            F.when(F.col('chromosome').isin(['X', 'Y', 'x', 'y']),
+                    F.lpad(F.col('chromosome'), 2, '2'))
+            .otherwise(F.lpad(F.col('chromosome'), 2, '0'))
+        ),
+        F.asc(F.col('start')),
+        F.asc(F.col('study_code')),
+        F.asc(F.col('family_id')),
+        F.asc(F.col('is_proband'))
+    )
+    t_output_sorted.toPandas().to_csv(output_filename, sep="\t", index=False, na_rep='-', compression='gzip')
 
 if args.hgmd_var is None:
     print("Missing hgmd_var parquet file", file=sys.stderr)
