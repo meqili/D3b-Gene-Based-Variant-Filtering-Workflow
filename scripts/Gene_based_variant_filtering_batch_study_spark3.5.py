@@ -49,10 +49,6 @@ parser.add_argument('--spark_driver_maxResultSize', type=int, default=1, help='S
 parser.add_argument('--sql_broadcastTimeout', type=int, default=300, help='Spark SQL broadcast timeout in seconds')
 parser.add_argument('--spark_driver_core', type=int, default=1, help='Number of Spark driver cores')
 parser.add_argument('--spark_driver_mem', type=int, default=4, help='Spark driver memory in GB')
-
-args = parser.parse_args()
-
-# Create spark session
 args = parser.parse_args()
 
 # Create SparkSession
@@ -229,10 +225,10 @@ def gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l,
 
     # Table occurrences, restricted to input genes, chromosomes of those genes, input study IDs, and occurrences where alternate allele
     # is present, plus adjusted calls based on alternative allele fraction in the total sequencing depth
-    c_ocr = ['ad', 'dp', 'variant_allele_fraction', 'calls', 'adjusted_calls', 'filter', 'is_lo_conf_denovo', 'is_hi_conf_denovo',
+    c_ocr = ['ad_ref', 'ad_alt', 'dp', 'variant_allele_fraction', 'calls', 'adjusted_calls', 'filters', 'is_lo_conf_denovo', 'is_hi_conf_denovo',
         'is_proband', 'affected_status', 'gender', 'study_id',
-        'biospecimen_id', 'participant_id', 'mother_id', 'father_id', 'family_id']
-    t_ocr = occurrences.withColumn('variant_allele_fraction', F.col('ad')[1] / (F.col('ad')[0] + F.col('ad')[1])) \
+        'sample_id', 'participant_id', 'mother_id', 'father_id', 'family_id']
+    t_ocr = occurrences.withColumn('variant_allele_fraction', F.col('ad_alt') / (F.col('ad_alt') + F.col('ad_ref'))) \
         .withColumn('adjusted_calls', F.when(F.col('variant_allele_fraction') < aaf, F.array(F.lit(0), F.lit(0)))
                                     .otherwise(F.col('calls'))) \
         .where(F.col('chromosome').isin(chr_list) \
