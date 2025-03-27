@@ -10,8 +10,6 @@ parser = argparse.ArgumentParser(
     MUST BE RUN WITH spark-submit. For example: \n\
     spark-submit --driver-memory 10G Gene_based_variant_filtering.py',
     formatter_class=RawTextHelpFormatter)
-
-parser = argparse.ArgumentParser()
 parser.add_argument('-g', '--gene_list_file', required=True,
                     help='A text file that contains the list of gene. Each row in the text file should correspond to one gene. No header required.')
 # parser.add_argument('-s', '--study_ids', nargs='+', default=[], required=True,
