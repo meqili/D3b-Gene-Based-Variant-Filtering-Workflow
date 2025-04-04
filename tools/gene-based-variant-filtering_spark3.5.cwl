@@ -82,9 +82,9 @@ inputs:
   doc: the latest HGMD variant  parquet file dir
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2024Q3_variant.tar.gz
+    name: hg38_HGMD2025Q1_variant.tar.gz
     class: File
-    path: 6780431109c1a319b8e0d188
+    path: 67efe4ae799cc5199079fea1
 - id: dbnsfp_annovar
   doc: dbnsfp annovar parquet file dir
   type: File
