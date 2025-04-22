@@ -266,10 +266,11 @@ def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_
         .withColumn('participant_id', F.regexp_replace(F.upper(F.col('participant_fhir_id')), "-", "_")) \
         .filter(F.col("observed") == "confirmed") \
         .select('participant_id', 'source_text', 'code') \
-        .distinct() \
         .groupBy('participant_id') \
-        .agg(F.collect_list('source_text').alias('phenotypes_combined'), \
-            F.collect_list('code').alias('hpos_combined'))
+        .agg(
+            F.array_distinct(F.collect_list('source_text')).alias('phenotypes_combined'),
+            F.array_distinct(F.collect_list('code')).alias('hpos_combined')
+        )
     #### processing studies table
     t_std = studies.select("study_id", "study_code").distinct()
     
