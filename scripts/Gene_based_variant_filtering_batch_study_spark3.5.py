@@ -254,9 +254,8 @@ def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_
     t_dgn = diagnoses \
         .withColumn('participant_id', F.regexp_replace(F.upper(F.col('participant_fhir_id')), "-", "_")) \
         .select('participant_id', 'source_text') \
-        .distinct() \
         .groupBy('participant_id') \
-        .agg(F.collect_list('source_text').alias('diagnoses_combined'))
+        .agg(F.array_distinct(F.collect_list('source_text').alias('diagnoses_combined')))
     #### processing phenotypes table
     exploded_pht = phenotypes.select("phenotype_id", F.explode(F.col("condition_coding")).alias("coding"))
     hpo_pht = exploded_pht.filter(F.col("coding.category") == "HPO") \
