@@ -2,7 +2,7 @@ cwlVersion: v1.2
 class: CommandLineTool
 label: Gene_Based_Variant_Filtering (spark 3.5 ver)
 doc: |-
-  Get a list of deleterious variants in interested genes from specified study cohort(s) in the Kids First program.
+  Get a list of deleterious variants in interested genes from specified study cohort(s)/participant(s) in the Kids First program.
 $namespaces:
   sbg: https://sevenbridges.com
 
@@ -27,6 +27,14 @@ inputs:
   type: File
   inputBinding:
     prefix: -g
+    position: 3
+    shellQuote: false
+- id: participant_list
+  doc: |-
+    A text file that contains the list of participants. Each row in the text file should correspond to one participant ID. No header required.
+  type: File
+  inputBinding:
+    prefix: -p
     position: 3
     shellQuote: false
 - id: spark_driver_mem
