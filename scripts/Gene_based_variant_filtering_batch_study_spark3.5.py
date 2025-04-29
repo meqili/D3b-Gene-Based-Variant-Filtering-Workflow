@@ -144,9 +144,11 @@ def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_
     # Table consequences, restricted to canonical annotation and input genes/study IDs
     c_csq = ['consequence', 'vep_impact', 'symbol', 'ensembl_gene_id', 'refseq_mrna_id', 'hgvsc',
             'hgvsp']
-    t_csq = consequences.where((F.col('original_canonical') == 'true') \
-                & (F.col('symbol').isin(gene_symbols_trunc))) \
-        .select(cond + c_csq)
+    t_csq = consequences.where( \
+        (F.col('original_canonical') == 'true') & \
+        F.col('symbol').isin(gene_symbols_trunc) & \
+        F.col("ensembl_gene_id").startswith("ENSG") \
+    ).select(cond + c_csq)
     chr_list = [c['chromosome'] for c in t_csq.select('chromosome').distinct().collect()]
 
     # Table dbnsfp_annovar, added a column for ratio of damage predictions to all predictions
