@@ -32,7 +32,7 @@ inputs:
 - id: participant_list
   doc: |-
     A text file that contains the list of participants. Each row in the text file should correspond to one participant ID. No header required.
-  type: File
+  type: File?
   inputBinding:
     prefix: -p
     position: 3

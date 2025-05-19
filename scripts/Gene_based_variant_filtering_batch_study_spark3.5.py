@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(
     formatter_class=RawTextHelpFormatter)
 parser.add_argument('-g', '--gene_list_file', required=True,
                     help='A text file that contains the list of gene. Each row in the text file should correspond to one gene. No header required.')
-parser.add_argument('-p', '--ptp_list_file', required=True,
+parser.add_argument('-p', '--ptp_list_file', required=False,
                     help='A text file that contains the list of participant IDs. Each row in the text file should correspond to one participant. No header required.')
 # parser.add_argument('-s', '--study_ids', nargs='+', default=[], required=True,
 #                     help='list of study to look for')
@@ -76,7 +76,6 @@ spark = glow.register(spark)
 
 # parameter configuration
 gene_text_path = args.gene_list_file
-ptp_text_path = args.ptp_list_file
 # study_id_list = args.study_ids
 gnomAD_TOPMed_maf = args.maf
 dpc_l = args.dpc_l
@@ -92,9 +91,14 @@ gene_symbols_trunc = list(gene_symbols_trunc.toPandas()['value'])
 gene_symbols_trunc = [gl.replace('\xa0', '').replace('\n', '') for gl in gene_symbols_trunc]
 
 # get a list of participants and remove unwanted strings in the end of each ID
-participant_list = spark.read.option("header", False).text(ptp_text_path)
-participant_list = list(participant_list.toPandas()['value'])
-participant_list = [pl.replace('\xa0', '').replace('\n', '') for pl in participant_list]
+if args.ptp_list_file:
+    ptp_text_path = args.ptp_list_file
+    participant_list = spark.read.option("header", False).text(ptp_text_path)
+    participant_list = list(participant_list.toPandas()['value'])
+    participant_list = [pl.replace('\xa0', '').replace('\n', '') for pl in participant_list]
+else:
+    # Handle the case where ptp_list_file is not provided
+    participant_list = []
 
 # customized tables loading
 hg38_HGMD_variant = spark.read.parquet(args.hgmd_var)
@@ -240,11 +244,12 @@ def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_
         .withColumn('adjusted_calls', F.when(F.col('variant_allele_fraction') < aaf, F.array(F.lit(0), F.lit(0)))
                                     .otherwise(F.col('calls'))) \
         .where(F.col('chromosome').isin(chr_list) \
-                & F.col('participant_id').isin(participant_list) \
                 & (F.col('is_multi_allelic') == 'false') \
                 & (F.col('has_alt') == 1) \
                 & (F.col('adjusted_calls') != F.array(F.lit(0), F.lit(0)))) \
         .select(cond + c_ocr)
+    if participant_list:
+        t_ocr = t_ocr.where(F.col('participant_id').isin(participant_list))
 
     # Finally join all together
     # t_output = F.broadcast(t_csq_vrt_dbn) \
