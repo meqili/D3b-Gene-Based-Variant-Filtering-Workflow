@@ -20,7 +20,7 @@ parser.add_argument('--hgmd_var',
         help='HGMD variant parquet file dir')
 parser.add_argument('--dbnsfp',
         help='dbnsfp annovar parquet file dir')
-parser.add_argument('--clinvar', action='store_true', help='Include ClinVar data')
+parser.add_argument('--clinvar', help='ClinVar parquet file dir')
 parser.add_argument('--consequences', action='store_true', help='Include consequences data')
 parser.add_argument('--variants', action='store_true', help='Include variants data')
 parser.add_argument('--diagnoses', action='store_true', help='Include diagnoses data')
@@ -101,11 +101,22 @@ else:
     participant_list = []
 
 # customized tables loading
-hg38_HGMD_variant = spark.read.parquet(args.hgmd_var)
+use_hgmd = 'HGMD' in known_variants_l
+use_clinvar = 'ClinVar' in known_variants_l
+
+if use_hgmd:
+    if args.hgmd_var is None:
+        print("HGMD is listed in known_variants_l but --hgmd_var is not provided", file=sys.stderr)
+        sys.exit(1)
+    hg38_HGMD_variant = spark.read.parquet(args.hgmd_var)
+
+if use_clinvar:
+    if args.clinvar is None:
+        print("ClinVar is listed in known_variants_l but --clinvar is not provided", file=sys.stderr)
+        sys.exit(1)
+    clinvar = spark.read.parquet(args.clinvar)
+
 dbnsfp_annovar = spark.read.parquet(args.dbnsfp)
-if args.clinvar:
-    clinvar = spark.read.format("delta") \
-        .load("s3a://kf-strides-public-vwb-prd/clinvar")
 if args.consequences:
     consequences = spark.read.format("delta") \
         .load('s3a://kf-strides-registered-vwb-prd/enriched/consequences')
@@ -140,8 +151,8 @@ study_id_list = [substring.upper()]
 
 # gene based variant filtering
 def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_TOPMed_maf, dpc_l, dpc_u,
-                known_variants_l, aaf, hg38_HGMD_variant, dbnsfp_annovar, clinvar, 
-                consequences, variants, diagnoses, phenotypes, studies, occurrences):
+                aaf, hg38_HGMD_variant, dbnsfp_annovar, clinvar, consequences, variants,
+                diagnoses, phenotypes, studies, occurrences, use_clinvar, use_hgmd):
     #  Actual running step, generating table t_output
     cond = ['chromosome', 'start', 'reference', 'alternate']
 
@@ -178,14 +189,15 @@ def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_
         .select(*[F.expr(f"external_frequencies.{nc}.af").alias(f"{nc}_af") for nc in c_vrt_nested] + cond + c_vrt_unnested)
 
     # Table ClinVar, restricted to those seen in variants and labeled as pathogenic/likely_pathogenic
-    c_clv = ['VariationID', 'clin_sig', 'conditions']
-    t_clv = clinvar \
-        .withColumnRenamed('name', 'VariationID') \
-        .where(F.split(F.split(F.col('geneinfo'), '\\|')[0], ':')[0].isin(gene_symbols_trunc) \
-                & (F.array_contains(F.col('clin_sig'), 'Pathogenic') \
-                | F.array_contains(F.col('clin_sig'), 'Likely_pathogenic'))) \
-        .join(t_vrt, cond) \
-        .select(cond + c_clv)
+    if use_clinvar:
+        c_clv = ['VariationID', 'clin_sig', 'conditions']
+        t_clv = clinvar \
+            .withColumnRenamed('name', 'VariationID') \
+            .where(F.split(F.split(F.col('geneinfo'), '\\|')[0], ':')[0].isin(gene_symbols_trunc) \
+                    & (F.array_contains(F.col('clin_sig'), 'Pathogenic') \
+                    | F.array_contains(F.col('clin_sig'), 'Likely_pathogenic'))) \
+            .join(t_vrt, cond) \
+            .select(cond + c_clv)
 
     # Table ClinVar, restricted to those seen in variants and labeled as pathogenic/likely_pathogenic/vus
     # c_clv = ['VariationID', 'clin_sig']
@@ -200,13 +212,14 @@ def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_
     #     .select(cond + c_clv)
 
     # Table HGMD, restricted to those seen in variants and labeled as DM or DM?
-    c_hgmd = ['HGMDID', 'variant_class', 'phen']
-    t_hgmd = hg38_HGMD_variant \
-        .withColumnRenamed('id', 'HGMDID') \
-        .where(F.col('symbol').isin(gene_symbols_trunc) \
-                & F.col('variant_class').startswith('DM')) \
-        .join(t_vrt, cond) \
-        .select(cond + c_hgmd)
+    if use_hgmd:
+        c_hgmd = ['HGMDID', 'variant_class', 'phen']
+        t_hgmd = hg38_HGMD_variant \
+            .withColumnRenamed('id', 'HGMDID') \
+            .where(F.col('symbol').isin(gene_symbols_trunc) \
+                    & F.col('variant_class').startswith('DM')) \
+            .join(t_vrt, cond) \
+            .select(cond + c_hgmd)
 
     # Join consequences, variants and dbnsfp, restricted to those with MAF less than a threshold and PredCountRatio_D2T within a range
     t_csq_vrt = t_csq \
@@ -224,13 +237,13 @@ def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_
                     .otherwise(0))
 
     # Include ClinVar if specified
-    if 'ClinVar' in known_variants_l and t_clv.count() > 0:
+    if use_clinvar and t_clv.count() > 0:
         t_csq_vrt_dbn = t_csq_vrt_dbn \
             .join(t_clv, cond, how='left') \
             .withColumn('flag', F.when(F.col('VariationID').isNotNull(), 1).otherwise(t_csq_vrt_dbn.flag))
 
     # Include HGMD if specified
-    if 'HGMD' in known_variants_l and t_hgmd.count() > 0:
+    if use_hgmd and t_hgmd.count() > 0:
         t_csq_vrt_dbn = t_csq_vrt_dbn \
             .join(t_hgmd, cond, how='left') \
             .withColumn('flag', F.when(F.col('HGMDID').isNotNull(), 1).otherwise(t_csq_vrt_dbn.flag))
@@ -334,6 +347,6 @@ if args.studies is None:
     exit(1)
 
 t_output = gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_TOPMed_maf, dpc_l, dpc_u,
-                    known_variants_l, aaf, hg38_HGMD_variant, dbnsfp_annovar, clinvar, 
-                    consequences, variants, diagnoses, phenotypes, studies, occurrences)
+                    aaf, hg38_HGMD_variant, dbnsfp_annovar, clinvar, consequences, 
+                    variants, diagnoses, phenotypes, studies, occurrences, use_clinvar, use_hgmd)
 write_output(t_output, output_basename, study_id_list)

@@ -101,10 +101,12 @@ inputs:
     class: File
     path: 65b03e76b2d0f428e1c6f049
 - id: clinvar
-  type: boolean
-  inputBinding:
-    position: 3
-    prefix: --clinvar
+  doc: the latest HGMD variant  parquet file dir
+  type: File
+  sbg:suggestedValue:
+    name: clinvar_20250504.tar.gz
+    class: File
+    path: 682cce2cf8492c6e34394dc5
 - id: consequences
   type: boolean
   inputBinding:
@@ -167,10 +169,10 @@ inputs:
   - name: buildver
     type: enum
     symbols:
-    - Clinvar
+    - ClinVar
     - HGMD
-    - Clinvar HGMD
-  default: Clinvar HGMD
+    - ClinVar HGMD
+  default: ClinVar HGMD
   inputBinding:
     prefix: --known_variants_l
     position: 3
@@ -207,9 +209,9 @@ baseCommand:
 arguments:
 - position: 1
   valueFrom: |-
-    $(inputs.dbnsfp_annovar.path) && tar -xvf $(inputs.hgmd_var.path)
+    $(inputs.dbnsfp_annovar.path) && tar -xvf $(inputs.hgmd_var.path) && tar -xvf $(inputs.clinvar.path)
   shellQuote: false
 - position: 2
   valueFrom: |-
-    && python Gene_based_variant_filtering_batch_study_spark3.5.py --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/ --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/ 
+    && python Gene_based_variant_filtering_batch_study_spark3.5.py --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/ --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/ --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/
   shellQuote: false
