@@ -241,7 +241,7 @@ def gene_based_filt(gene_symbols_trunc, study_id_list, gnomAD_TOPMed_maf, dpc_l,
         .select('participant_id', 'source_text_diagnosis') \
         .distinct() \
         .groupBy('participant_id') \
-        .agg(F.collect_list('source_text_diagnosis').alias('diagnoses_combined'))
+        .agg(F.collect_list('source_text_diagnosis')).alias('diagnoses_combined')
     t_pht = phenotypes \
         .select('participant_id', 'source_text_phenotype', 'hpo_id_phenotype') \
         .distinct() \
