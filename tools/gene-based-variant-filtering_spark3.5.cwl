@@ -106,7 +106,7 @@ inputs:
   sbg:suggestedValue:
     name: clinvar_20250504.tar.gz
     class: File
-    path: 682cce2cf8492c6e34394dc5
+    path: 6840557f2b97f154cfc153b9
 - id: consequences
   type: boolean
   inputBinding:
