@@ -20,7 +20,7 @@ parser.add_argument('--hgmd_var',
         help='HGMD variant parquet file dir')
 parser.add_argument('--dbnsfp',
         help='dbnsfp annovar parquet file dir')
-parser.add_argument('--clinvar', help='ClinVar parquet file dir')
+parser.add_argument('--clinvar', action='store_true', help='Include clinvar data')
 parser.add_argument('--consequences', action='store_true', help='Include consequences data')
 parser.add_argument('--variants', action='store_true', help='Include variants data')
 parser.add_argument('--diagnoses', action='store_true', help='Include diagnoses data')
@@ -114,7 +114,8 @@ if use_clinvar:
     if args.clinvar is None:
         print("ClinVar is listed in known_variants_l but --clinvar is not provided", file=sys.stderr)
         sys.exit(1)
-    clinvar = spark.read.parquet(args.clinvar)
+    clinvar = spark.read.format("delta") \
+        .load('s3a://kf-strides-public-vwb-prd/clinvar/')
 
 dbnsfp_annovar = spark.read.parquet(args.dbnsfp)
 if args.consequences:
