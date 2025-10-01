@@ -90,9 +90,9 @@ inputs:
   doc: the latest HGMD variant  parquet file dir
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2025Q1_variant.tar.gz
+    name: hg38_HGMD2025Q2_variant.tar.gz
     class: File
-    path: 67efe4ae799cc5199079fea1
+    path: 688e1415960d317584f43027
 - id: dbnsfp_annovar
   doc: dbnsfp annovar parquet file dir
   type: File
@@ -207,9 +207,9 @@ baseCommand:
 arguments:
 - position: 1
   valueFrom: |-
-    $(inputs.dbnsfp_annovar.path) && tar -xvf $(inputs.hgmd_var.path) && tar -xvf $(inputs.clinvar.path)
+    $(inputs.dbnsfp_annovar.path) && tar -xvf $(inputs.hgmd_var.path)
   shellQuote: false
 - position: 2
   valueFrom: |-
-    && python Gene_based_variant_filtering_batch_study_spark3.5.py --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/ --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/ --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/
+    && python Gene_based_variant_filtering_batch_study_spark3.5.py --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/ --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/
   shellQuote: false
