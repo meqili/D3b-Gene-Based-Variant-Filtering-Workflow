@@ -101,12 +101,10 @@ inputs:
     class: File
     path: 65b03e76b2d0f428e1c6f049
 - id: clinvar
-  doc: the latest HGMD variant  parquet file dir
-  type: File
-  sbg:suggestedValue:
-    name: clinvar_20250504.tar.gz
-    class: File
-    path: 6840557f2b97f154cfc153b9
+  type: boolean
+  inputBinding:
+    position: 3
+    prefix: --clinvar
 - id: consequences
   type: boolean
   inputBinding:
