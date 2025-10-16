@@ -1,6 +1,6 @@
 import argparse
 from argparse import RawTextHelpFormatter
-from pyspark.sql import SparkSession, functions as F
+from pyspark.sql import SparkSession, functions as F, Window
 from pyspark.sql.types import DoubleType
 import glow
 import sys
@@ -161,10 +161,15 @@ def gene_based_filt(gene_symbols_trunc, participant_list, study_id_list, gnomAD_
     c_csq = ['consequence', 'vep_impact', 'symbol', 'ensembl_gene_id', 'refseq_mrna_id', 'hgvsc',
             'hgvsp']
     t_csq = consequences.where( \
-        (F.col('original_canonical') == 'true') & \
+        (F.col('original_canonical') == True) & \
+        (F.col('picked') == True) & \
         F.col('symbol').isin(gene_symbols_trunc) & \
         F.col("ensembl_gene_id").startswith("ENSG") \
-    ).select(cond + c_csq)
+    ).withColumn('mrna_priority', F.row_number().over(
+        Window.partitionBy(cond)
+              .orderBy(F.col('refseq_mrna_id').isNull().cast('int')))) \
+    .filter(F.col('mrna_priority') == 1) \
+    .select(cond + c_csq)
     chr_list = [c['chromosome'] for c in t_csq.select('chromosome').distinct().collect()]
 
     # Table dbnsfp_annovar, added a column for ratio of damage predictions to all predictions
